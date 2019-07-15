@@ -134,7 +134,7 @@ function! auto_ctags#ctags_cmd()
 
   let tags_path = auto_ctags#ctags_path()
   if tags_path == ''
-    call s:warn('Tags path not exists.')
+    " call s:warn('Tags path not exists.')
     return ctags_cmd
   endif
 
