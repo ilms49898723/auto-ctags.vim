@@ -140,7 +140,7 @@ function! auto_ctags#ctags_cmd()
 
   let tags_lock_path = auto_ctags#ctags_lock_path()
   if glob(tags_lock_path) != ''
-    call s:warn('Tags path currently locked.')
+    " call s:warn('Tags path currently locked.')
     return ctags_cmd
   endif
 
