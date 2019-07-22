@@ -17,6 +17,7 @@ augroup auto_ctags
 augroup END
 
 command! Ctags call auto_ctags#ctags(1)
+command! CtagsCreateOnly call auto_ctags#ctags_check_execute()
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

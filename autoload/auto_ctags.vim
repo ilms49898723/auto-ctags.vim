@@ -55,6 +55,10 @@ if !exists("g:auto_ctags_absolute_path")
   let g:auto_ctags_absolute_path = 0
 endif
 
+if !exists("g:auto_ctags_run_only_current_dir")
+  let g:auto_ctags_run_only_current_dir = 0
+endif
+
 " lockfile set
 let s:lockfiles = s:Set.set()
 
@@ -84,6 +88,38 @@ function! auto_ctags#ctags_path()
 
   return s:Path.realpath(path)
 endfunction
+
+function! auto_ctags#ctags_run_target_path()
+  if g:auto_ctags_run_only_current_dir == 1
+    return '.'
+  endif
+
+  let path = ''
+  for directory in g:auto_ctags_directory_list
+    let target_search_directory = directory
+    if g:auto_ctags_search_recursively > 0
+      let dirs = finddir(directory, escape(expand('<afile>:p:h'), ' ') . ';', -1)
+      if !empty(dirs)
+        let directory = fnamemodify(dirs[0], ':p')
+      endif
+    endif
+    if isdirectory(directory)
+      let target_search_directory = s:Path.remove_last_separator(target_search_directory)
+      let totalcount = count(target_search_directory, '/')
+      let currentcount = 0
+      while currentcount < totalcount
+        let directory = s:Path.dirname(directory)
+        let currentcount = currentcount + 1
+      endwhile
+
+      let path = directory
+      break
+    endif
+  endfor
+
+  return s:Path.realpath(path)
+endfunction
+
 
 function! auto_ctags#ctags_lock_path()
   let path = auto_ctags#ctags_path()
@@ -116,7 +152,8 @@ function! auto_ctags#ctags_cmd()
     return ctags_cmd
   endif
 
-  let currentdir = '.'
+  let currentdir = auto_ctags#ctags_run_target_path()
+
   if g:auto_ctags_absolute_path > 0
     " Windows ctags command get currentdir for backslash path with slash aware
     " shell (ex bash)
@@ -147,6 +184,18 @@ function! auto_ctags#ctags_cmd()
   let ctags_cmd = [tags_bin_path] + auto_ctags#ctags_cmd_opt() + ['-f', tags_path, currentdir]
 
   return ctags_cmd
+endfunction
+
+function! auto_ctags#ctags_check_execute()
+  let tags_path = auto_ctags#ctags_path()
+
+  if tags_path == ''
+    return
+  endif
+
+  if empty(glob(tags_path))
+    call auto_ctags#ctags(1)
+  endif
 endfunction
 
 function! auto_ctags#ctags(recreate)
