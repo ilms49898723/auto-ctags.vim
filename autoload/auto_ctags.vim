@@ -81,7 +81,11 @@ function! auto_ctags#ctags_path()
           let tags_name = &filetype.'.'.tags_name
         endif
       endif
-      let path = directory . s:Path.separator() . tags_name
+      if directory =~ '.*/$'
+        let path = directory . tags_name
+      else
+        let path = directory . s:Path.separator() . tags_name
+      endif
       break
     endif
   endfor
@@ -104,7 +108,10 @@ function! auto_ctags#ctags_run_target_path()
       endif
     endif
     if isdirectory(directory)
-      let target_search_directory = s:Path.remove_last_separator(target_search_directory)
+      while target_search_directory =~ '.*/$'
+        let target_search_directory = s:Path.remove_last_separator(target_search_directory)
+      endwhile
+      let target_search_directory = target_search_directory . s:Path.separator()
       let totalcount = count(target_search_directory, '/')
       let currentcount = 0
       while currentcount < totalcount
