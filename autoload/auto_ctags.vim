@@ -239,10 +239,6 @@ function! auto_ctags#ctags(recreate)
     call s:Process.execute(cmd)
     call s:lockfile_del_remove(tags_lock_path)
   endif
-
-  if a:recreate > 0
-    redraw!
-  endif
 endfunction
 
 function! s:warn(msg)
