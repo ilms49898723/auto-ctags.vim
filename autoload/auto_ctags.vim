@@ -182,16 +182,13 @@ function! auto_ctags#ctags_cmd()
     return ctags_cmd
   endif
 
-  let tags_path_new = tags_path . '.new'
-
   let tags_lock_path = auto_ctags#ctags_lock_path()
   if glob(tags_lock_path) != ''
     " call s:warn('Tags path currently locked.')
     return ctags_cmd
   endif
 
-  let ctags_cmd = [tags_bin_path] + auto_ctags#ctags_cmd_opt() + ['-f', tags_path_new, currentdir] +
-                \ ['&&'] + ['mv', tags_path_new, tags_path]
+  let ctags_cmd = [tags_bin_path] + auto_ctags#ctags_cmd_opt() + ['-f', tags_path, currentdir]
 
   return ctags_cmd
 endfunction
@@ -204,11 +201,6 @@ function! auto_ctags#ctags_check_execute()
   endif
 
   if empty(glob(tags_path))
-    call auto_ctags#ctags(1)
-    return
-  endif
-
-  if !empty(glob(tags_path . '.new'))
     call auto_ctags#ctags(1)
     return
   endif
@@ -259,12 +251,6 @@ function! s:warn(msg)
   echohl WarningMsg
   echo 'auto_ctags.vim:' a:msg
   echohl None
-endfunction
-
-" after care: tempfile delete at vim exit
-function! s:tempfile_del_atquit()
-  let tags_path_new = auto_ctags#ctags_path() . '.new'
-  call delete(tags_path_new)
 endfunction
 
 " after care: lockfile delete at vim exit
