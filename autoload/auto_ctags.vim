@@ -78,7 +78,7 @@ function! auto_ctags#ctags_path()
       let tags_name = g:auto_ctags_tags_name
       if g:auto_ctags_filetype_mode > 0
         if &filetype !=# ''
-          let tags_name = &filetype.'.'.tags_name
+          let tags_name = &filetype . '.' . tags_name
         endif
       endif
       if directory =~ '.*/$'
@@ -182,13 +182,16 @@ function! auto_ctags#ctags_cmd()
     return ctags_cmd
   endif
 
+  let tags_path_new = tags_path . '.new'
+
   let tags_lock_path = auto_ctags#ctags_lock_path()
   if glob(tags_lock_path) != ''
     " call s:warn('Tags path currently locked.')
     return ctags_cmd
   endif
 
-  let ctags_cmd = [tags_bin_path] + auto_ctags#ctags_cmd_opt() + ['-f', tags_path, currentdir]
+  let ctags_cmd = [tags_bin_path] + auto_ctags#ctags_cmd_opt() + ['-f', tags_path_new, currentdir] +
+                \ ['&&'] + ['mv', tags_path_new, tags_path]
 
   return ctags_cmd
 endfunction
@@ -202,6 +205,17 @@ function! auto_ctags#ctags_check_execute()
 
   if empty(glob(tags_path))
     call auto_ctags#ctags(1)
+    return
+  endif
+
+  if !empty(glob(tags_path . '.new'))
+    call auto_ctags#ctags(1)
+    return
+  endif
+
+  if getfsize(tags_path) <= 0
+    call auto_ctags#ctags(1)
+    return
   endif
 endfunction
 
@@ -229,7 +243,7 @@ function! auto_ctags#ctags(recreate)
     call s:Promise.new({resolve -> s:Job.start(cmd, {
             \ 'stdout': [''],
             \ 'stderr': [''],
-            \ 'on_exit':{ exit_status -> resolve(exit_status) },
+            \ 'on_exit': { exit_status -> resolve(exit_status) },
           \ })
           \})
           \.catch({ exc -> execute('echomsg string(exc)', '') })
@@ -247,8 +261,13 @@ function! s:warn(msg)
   echohl None
 endfunction
 
+" after care: tempfile delete at vim exit
+function! s:tempfile_del_atquit()
+  let tags_path_new = auto_ctags#ctags_path() . '.new'
+  call delete(tags_path_new)
+endfunction
 
-" after care:lockfile delete at vim exit
+" after care: lockfile delete at vim exit
 function! s:lockfile_del_atquit()
   let filelist = s:lockfiles.to_list()
   for file in filelist
