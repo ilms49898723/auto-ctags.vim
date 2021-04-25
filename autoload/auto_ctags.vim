@@ -57,6 +57,10 @@ endif
 
 if !exists("g:auto_ctags_run_only_current_dir")
   let g:auto_ctags_run_only_current_dir = 0
+
+let g:auto_ctags_warn_msgs = {}
+if !exists("g:auto_ctags_warn_once")
+  let g:auto_ctags_warn_once = 0
 endif
 
 " lockfile set
@@ -247,7 +251,22 @@ function! auto_ctags#ctags(recreate)
   endif
 endfunction
 
+function! auto_ctags#set_tags_option()
+  let tag_path = auto_ctags#ctags_path()
+  if tag_path != '' && stridx(&tags, tag_path) == -1
+      execute 'setlocal tags^='.tag_path
+  endif
+endfunction
+
 function! s:warn(msg)
+  if g:auto_ctags_warn_once > 0
+    if has_key(g:auto_ctags_warn_msgs, a:msg)
+      " this msg is already shown, so ignore
+      return
+    else
+      let g:auto_ctags_warn_msgs[a:msg] = 1
+    endif
+  endif
   echohl WarningMsg
   echo 'auto_ctags.vim:' a:msg
   echohl None
